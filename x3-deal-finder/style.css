@@ -64,9 +64,9 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
 .v-none { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); }
 .v-new { color: var(--accent); background: var(--accent-soft); }
 .chart-box { overflow-x: auto; }
-#chart-panel { position: relative; }
-#chart .dot { cursor: pointer; outline: none; }
-#chart .dot.on { stroke: var(--ink); stroke-width: 2; fill-opacity: 1; }
+#chart-panel, #x5-chart-panel { position: relative; }
+.chart-box .dot { cursor: pointer; outline: none; }
+.chart-box .dot.on { stroke: var(--ink); stroke-width: 2; fill-opacity: 1; }
 .tip { position: absolute; z-index: 2; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 0.82rem; line-height: 1.4; box-shadow: 0 4px 14px rgb(0 0 0 / 0.18); white-space: nowrap; }
 .tip b { font-family: var(--display); font-size: 0.98rem; }
 tr.sel td { background: color-mix(in srgb, var(--accent) 14%, transparent); }
