@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>X3 30e Deal Finder</title>
+<script>try { const a = localStorage.getItem("vitepress-theme-appearance"); if (a === "dark" || a === "light") document.documentElement.dataset.theme = a; } catch (e) {}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav"><a href="index.html" aria-current="page">X3 30e deal finder</a><a href="x5.html">CarMax X5 plug-in price points</a></nav>
+    <div class="eyebrow">Used BMW X3 xDrive30e / plug-in hybrid / distances from 22903</div>
+    <h1>X3 30e Deal Finder</h1>
+    <p class="sub">Every X3 xDrive30e I could find for sale nationwide on Oct 29, 2026. Each car is priced against a simple fair-price model built from those same listings, then ranked with the selling dealer's reviews factored in. BMW sold this car in the US only for model years 2020 and 2021, with a 12 kWh pack good for about 18 miles on electric. A 2022 listing is most likely a Canadian-market car.</p>
+    <p class="sub since" id="since"></p>
+    <div class="sources">
+      <span class="src"><b>CarGurus</b> 71 listings</span>
+      <span class="src"><b>CarMax</b> 10 (9 also on CarGurus, merged). Used to measure the CarMax premium</span>
+      <span class="src"><b>Dealer reviews</b> Google for 36 dealers, CarGurus for all</span>
+      <span class="src"><b>Cars.com, eBay Motors</b> not re-checked (no extra cars on Oct 16)</span>
+      <span class="src"><b>Carvana</b> skipped</span>
+    </div>
+  </header>
+
+  <section class="grid2">
+    <div class="panel" aria-labelledby="model-h">
+      <h2 id="model-h">The fair-price model</h2>
+      <div class="formula num" id="formula"></div>
+      <div class="stats">
+        <div class="stat hl"><div class="v num" id="s-prem"></div><div class="l" id="s-prem-l">CarMax premium</div></div>
+        <div class="stat"><div class="v num" id="s-rmse"></div><div class="l">typical miss either way</div></div>
+        <div class="stat"><div class="v num" id="s-r2"></div><div class="l">of price spread explained</div></div>
+        <div class="stat"><div class="v num" id="s-cg"></div><div class="l">avg gap to CarGurus' own estimate</div></div>
+      </div>
+      <p class="note">Ordinary least squares on year, miles, M Sport and whether the car is at CarMax, fit right here in the page from the listings below. Wild listings (more than 2.5 typical misses off) are left out of the fit: <span id="s-out"></span>. Premium and Executive packages tested at about $0 on Oct 16, so they are not in the model. The dealer does not change what the car is worth, so dealer reviews stay out of this formula and go into the Pick score instead.</p>
+      <p class="note"><b>CarMax premium</b> is the extra CarMax asks for the same year, miles and trim, compared with every other seller in the data. "Model fair" and "vs fair" below use the non-CarMax price, so a CarMax car shows up as that much worse of a deal. The plus or minus is one standard error; with so few CarMax cars, treat the exact number as soft.</p>
+    </div>
+
+    <div class="panel" aria-labelledby="check-h">
+      <h2 id="check-h">Check a car</h2>
+      <form class="checker" id="checker" autocomplete="off">
+        <label class="f" for="c-year">Model year
+          <select id="c-year"><option>2020</option><option selected>2021</option><option>2022</option></select>
+        </label>
+        <label class="f" for="c-miles">Miles
+          <input id="c-miles" type="number" inputmode="numeric" min="0" step="1000" value="31944">
+        </label>
+        <label class="f" for="c-price">Asking price
+          <input id="c-price" type="number" inputmode="numeric" min="0" step="100" value="26495">
+        </label>
+        <label class="f" for="c-dealer">Dealer Google rating
+          <input id="c-dealer" type="number" inputmode="decimal" min="1" max="5" step="0.1" value="4.8">
+        </label>
+        <label class="cb" for="c-m"><input id="c-m" type="checkbox" checked> M Sport</label>
+        <label class="cb" for="c-cm"><input id="c-cm" type="checkbox"> It's a CarMax car</label>
+      </form>
+      <div class="result" id="c-out" aria-live="polite"></div>
+      <p class="note" id="c-note">Filled in with the Roselle listing as an example. Type in any car's numbers. Tick "CarMax" and the fair price goes up by the CarMax premium, since that is what CarMax cars normally ask.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="chart-panel" aria-labelledby="chart-h">
+    <h2 id="chart-h">Price vs. miles</h2>
+    <div class="legend" id="legend"></div>
+    <div class="chart-box"><svg id="chart" viewBox="0 0 760 340" role="group" aria-label="Scatter plot of asking price against mileage, with model fair-price lines for 2020 and 2021 cars"></svg></div>
+    <div class="tip" id="tip" hidden></div>
+  </section>
+
+  <section aria-labelledby="list-h" style="display:grid;gap:12px">
+    <h2 id="list-h">All listings, ranked by Pick</h2>
+    <div class="weight">
+      <label for="f-w">A dealer one Google star better is worth</label>
+      <input id="f-w" type="range" min="0" max="20" step="1" value="10">
+      <span class="wv num" id="f-wv">10%</span>
+      <span class="note">of the price to me. Pick = % under fair price + that weight x (dealer stars - 4.5). At 0%, Pick is the price deal alone.</span>
+    </div>
+    <div class="filters">
+      <label class="f" for="f-dist">Within
+        <select id="f-dist"><option value="99999">any distance</option><option value="320">320 mi (a day's drive)</option><option value="600">600 mi</option><option value="1000">1,000 mi</option></select>
+      </label>
+      <label class="f" for="f-dealer">Dealer
+        <select id="f-dealer"><option value="0">any rating</option><option value="4.3">4.3+ stars</option><option value="4.5">4.5+ stars</option><option value="4.7">4.7+ stars</option></select>
+      </label>
+      <label class="cb" for="f-miles"><input id="f-miles" type="checkbox"> Hide cars past 80k miles</label>
+      <label class="cb" for="f-hi"><input id="f-hi" type="checkbox" checked> Hide Hawaii</label>
+      <label class="cb" for="f-cm"><input id="f-cm" type="checkbox"> Hide CarMax</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="table-box">
+      <table id="tbl">
+        <thead><tr>
+          <th class="r" data-k="pick"><button type="button">Pick</button></th>
+          <th data-k="verdict"><button type="button">Price deal</button></th>
+          <th class="r" data-k="pct"><button type="button">vs fair</button></th>
+          <th class="r" data-k="price"><button type="button">Price</button></th>
+          <th class="r" data-k="chg"><button type="button">Since Oct 16</button></th>
+          <th class="r" data-k="fair"><button type="button">Model fair</button></th>
+          <th class="r" data-k="cg"><button type="button">CarGurus est.</button></th>
+          <th data-k="y"><button type="button">Year</button></th>
+          <th class="r" data-k="mi"><button type="button">Miles</button></th>
+          <th data-k="pk"><button type="button">Packages</button></th>
+          <th data-k="loc"><button type="button">Where</button></th>
+          <th data-k="dstars"><button type="button">Dealer reviews</button></th>
+          <th class="r" data-k="dist"><button type="button">Dist</button></th>
+          <th data-k="get"><button type="button">Getting it here</button></th>
+          <th class="r" data-k="allin"><button type="button">All-in</button></th>
+          <th class="r" data-k="dom"><button type="button">Days listed</button></th>
+          <th data-k="src"><button type="button">Listing</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p><b>Price deal bands</b> compare the asking price to the model's fair price: Great is 8% or more under, Good 3 to 8% under, Fair within 3%, High 3 to 8% over, Overpriced more than 8% over.</p>
+    <p><b>Dealer stars</b> are the dealer's Google rating, which usually has hundreds or thousands of reviews. 4.5 is the typical rating among these dealers, so it is the zero point. CarGurus dealer reviews are fewer but come from car buyers, so they act as a check: after pulling a small review count toward a typical 3.9, a dealer under 3.4 on CarGurus loses 0.3 star and gets flagged. Google ratings were looked up for dealers within about 600 miles; the rest are scored as 4.3 and marked "Google n/a". Xtreme Autos Mall had no clear Google match.</p>
+    <p><b>All-in</b> is the price plus a way to get the car to Charlottesville: CarMax's own transfer fee, nothing for a drive of 320 miles or less, otherwise a rough transport estimate of $400 + $0.60/mile (capped at $2,000). It leaves out tax, title and dealer doc fees.</p>
+    <p><b>Since Oct 16</b> compares each price to the first version of this page. "New" means listed after Oct 16; a blank means the car was listed then but not picked up.</p>
+    <p><b>Flags:</b> the high-voltage battery warranty on these cars is 8 years / 80,000 miles, so a car past 80k has none left. A listing up 120+ days has room to negotiate. When CarGurus declines to rate a car, check the title and history before getting excited.</p>
+    <p>Prices, mileage and reviews as listed on Oct 29, 2026. Listings change daily.</p>
+  </footer>
+</div>
+
+<script>
+// y, price, CarGurus estimate, miles, location, miles from 22903, CarGurus rating, days listed, color, packages, seller, CarGurus listing id, CarGurus dealer id, price on Oct 16 (null = not seen then), CarMax stock, CarMax transfer fee (-1 = not transferable)
+const RAW = [
+[2021,17398,17342,129238,"Mooresville, NC",207,"fair",37,"Black","C","Pinnacle Motor Company LKN",459560536,461211,17698],
+[2020,17495,22295,65607,"Phoenix, AZ",1889,"great",148,"Gray","E","Chapman Hyundai",449788141,346734,22475],
+[2021,17778,18443,108439,"Amherst, OH",303,"good",28,"Black","C","Spitzer Chevrolet Amherst",460462843,204521,17778],
+[2020,18500,19337,86744,"Toledo, OH",369,"good",63,"White","P","City Wide Auto Credit - West",457168671,336309,19000],
+[2021,18567,20499,110264,"Elkhorn, NE",956,"great",18,"White","C","Baxter Ford Omaha",461348533,279874,20000],
+[2021,18875,19270,115150,"Tustin, CA",2198,"fair",37,"White","MPK","Tustin Buick GMC",459509208,47594,19225],
+[2021,18900,21550,86288,"Ephrata, PA",196,"great",217,"Silver","","Sterling Motorcar",443477884,352739,18900],
+[2021,18900,null,90800,"Linden, NJ",294,"",14,"Silver","P","BM Motorcars",461642978,291271,18900],
+[2020,18928,18648,100531,"Lynchburg, VA",54,"fair",33,"Silver","PCKD","Berglund Luxury of Lynchburg",460031945,339819,18928],
+[2020,18990,17887,111084,"Cedar City, UT",1869,"high",9,"White","P","Cedar City Motor Company",462053131,376043,null],
+[2020,19845,20695,80951,"Belton, TX",1173,"good",50,"Black","","Shelleys Auto Sales",458371480,337830,19845],
+[2021,19900,19408,98000,"Jackson, MI",424,"fair",2,"White","","Jackson Auto Co.",462663672,399876,null],
+[2021,19940,17739,104004,"Chandler, AZ",1890,"over",26,"White","E","Chapman BMW Chandler",460706066,278717,22444],
+[2020,20555,null,39113,"Woodbury, NJ",224,"",380,"Black","","Performance Dodge Ram of Woodbury",429699589,62096,20555],
+[2020,20988,21085,83820,"Englewood, CO",1420,"fair",28,"Silver","K","The Sharpest Rides",460399161,278398,20988],
+[2021,20995,21868,82112,"Springfield, IL",604,"good",118,"White","P","Auto Mall of Springfield",452582163,374382,20995],
+[2021,20995,21866,82674,"Honolulu, HI",4759,"good",19,"Silver","C","Honolulu Volkswagen",461255538,367696,20222],
+[2021,20995,21883,81444,"Englewood, CO",1419,"good",6,"Silver","K","Denver Auto Gallery",462333882,451630,null],
+[2021,21064,22169,75074,"Nashua, NH",498,"good",28,"Gray","P","Tulley BMW of Nashua",460452729,61893,22919],
+[2021,21499,20676,87725,"Northborough, MA",471,"fair",null,"Black","C","Lexus of Northborough",462864781,64134,null],
+[2021,21500,21981,67737,"Smyrna, GA",434,"good",35,"Gray","C","Ed Voyles Kia",459799254,296700,23930],
+[2021,21980,22635,75200,"Wexford, PA",197,"good",null,"White","","Wright Buick GMC of Wexford",462774943,52152,null],
+[2021,22698,22213,80231,"Selbyville, DE",186,"",14,"Black","C","Selbyville Holly Kia",461578155,295334,23000],
+[2021,22995,22885,78484,"Ozark, AR",860,"fair",64,"Blue","","E & E Auto Sales",457146778,369132,22995],
+[2020,23039,22352,52080,"Glendale, AZ",1897,"fair",5,"White","","Arrowhead BMW",462426223,414626,null],
+[2021,23291,24592,71201,"Rio Rancho, NM",1562,"good",70,"White","MC","Perfection Honda",456581986,59097,23691],
+[2020,23500,22677,59202,"Grand Rapids, MI",499,"fair",222,"Silver","K","SBS Motors",443014171,460575,23500],
+[2021,23772,24109,59630,"Longmont, CO",1420,"fair",64,"White","K","Reds Auto & Truck",457098613,287749,23971],
+[2021,23941,22400,78634,"Austin, TX",1218,"high",37,"White","C","BMW of South Austin",459520088,411035,null],
+[2020,23963,26136,31634,"Fort Washington, PA",234,"great",28,"Blue","P","BMW of Fort Washington",460368989,295102,24972],
+[2021,23985,24588,62047,"Golden Valley, MN",902,"good",30,"White","P","Rudy Luther Toyota",460161019,54474,23635],
+[2021,23995,18642,111778,"Murray, UT",1777,"outlier",30,"White","C","BMW of Murray",460217428,63132,24995],
+[2021,23995,27611,30472,"Jersey City, NJ",306,"great",25,"Blue","E","Axis Auto Group",460727211,464633,24995],
+[2021,24297,23419,63872,"Indianapolis, IN",424,"fair",16,"Gray","","Xtreme Autos Mall",461458333,453965,null],
+[2021,24417,23546,57673,"Jacksonville, FL",566,"fair",97,"Black","P","Tom Bush BMW Orange Park",454263726,60471,26259],
+[2021,24450,24990,53806,"Ann Arbor, MI",403,"fair",29,"Silver","C","LaFontaine Mitsubishi Ann Arbor",460244323,460413,24652],
+[2021,24698,26562,44010,"Denver, CO",1417,"good",16,"Black","P","BMW of Denver Downtown",461415166,60344,25999],
+[2021,24998,26004,53082,"Gilbert, AZ",1879,"good",35,"Black","CK","CarMax Phoenix-Gilbert",459711021,278750,25998,70213303,1999],
+[2021,25423,25477,55467,"Spencerport, NY",363,"fair",8,"Gray","PK","Summit View Auto",462112110,282828,null],
+[2021,25488,25404,49222,"Encino, CA",2226,"fair",22,"White","C","Mercedes-Benz of Encino",460962777,63715,25888],
+[2021,25488,23606,70762,"Chicago, IL",548,"high",13,"Black","MP","Perillo BMW",461726485,60788,25488],
+[2021,25494,27032,36438,"Indianapolis, IN",423,"good",30,"Black","E","AutoGiant USA",460210152,342789,25994],
+[2021,25500,26050,36450,"Orlando, FL",679,"fair",13,"White","P","HGreg.com Orlando",461689138,413135,26800],
+[2021,25800,27305,30350,"City of Industry, CA",2198,"good",160,"Black","","Carz 88 Auto",448752491,460174,27499],
+[2021,25818,24556,59471,"San Rafael, CA",2368,"high",53,"White","MC","Marin Mazda",458214576,285232,null],
+[2021,25960,21575,72043,"Dallas, TX",1081,"over",13,"Gray","CK","Dallas Lease Returns",461784411,284507,null],
+[2021,25990,26553,48025,"Littleton, CO",1419,"fair",23,"White","","Land Rover Denver",460846753,59859,26599],
+[2021,25990,25859,49587,"Rockville, MD",109,"fair",1,"Gray","E","BMW of Rockville",462705686,283100,null],
+[2021,25998,24528,56521,"Inglewood, CA",2224,"high",75,"Blue","PCK","CarMax LAX",456206177,60201,null,28931684,1999],
+[2021,25998,26409,59773,"Raleigh, NC",145,"fair",29,"Blue","CK","CarMax Capital Boulevard",460273252,369877,25998,28621842,149],
+[2021,25998,24167,72426,"Laurel, MD",123,"high",1,"White","K","CarMax Laurel",462705130,274987,null,70206848,-1],
+[2021,25999,26141,47112,"Cinnaminson, NJ",238,"fair",47,"White","K","Majestic Automotive Group",458667363,280979,25999],
+[2021,26267,27197,42133,"Gainesville, FL",612,"good",33,"Blue","ME","Subaru of Gainesville",459984934,275796,26845],
+[2021,26495,29116,31944,"Roselle, IL",572,"great",172,"White","MPECK","Exclusive Autohaus",447732137,367068,26495],
+[2021,26876,26884,41566,"Warner Robins, GA",469,"fair",42,"White","P","Volkswagen of Warner Robins",459102662,363681,27077],
+[2021,26998,27613,53857,"Pleasant Hill, CA",2344,"good",83,"Blue","PECK","CarMax Pleasant Hill",455517458,434531,26998,70159150,1999],
+[2021,27242,26457,38470,"Gainesville, FL",613,"fair",11,"Silver","C","BMW of Gainesville",461932000,288469,null],
+[2021,27288,27080,47020,"Loveland, CO",1417,"fair",null,"White","","BMW of Loveland",462804760,100624,null],
+[2021,27988,28329,40667,"Santa Rosa, CA",2371,"",84,"Blue","ME","Jim Bone Nissan",455363976,64933,31988],
+[2021,27990,28501,44610,"Falls Church, VA",98,"fair",23,"Blue","MPEK","FC Auto",460814578,281782,27990],
+[2021,27998,28612,50993,"Birmingham, AL",561,"fair",22,"Black","MK","CarMax Birmingham",460924326,270465,28998,70246126,449],
+[2021,28094,29306,28649,"Honolulu, HI",4759,"good",43,"Black","MPECK","Honolulu Buick GMC",459008744,414514,28294],
+[2022,28995,32427,45905,"Pittsford, NY",356,"great",92,"Black","MPK","Sutherland Auto Sales",454552568,194303,28995],
+[2021,28998,30657,38548,"San Diego, CA",2185,"good",82,"Blue","MK","CarMax Kearny Mesa",455613434,279062,29998,70172230,1999],
+[2021,29878,27580,38510,"Bluffton, SC",417,"high",32,"White","E","Hilton Head BMW",460082564,291776,29990],
+[2021,29980,26704,37641,"Costa Mesa, CA",2203,"over",27,"Black","MPECK","Carbeeco",460543923,447001,29980],
+[2021,29998,29004,49239,"Glen Allen, VA",61,"fair",4,"Blue","PECKD","CarMax West Broad",462504292,275159,null,28967399,0],
+[2021,30990,30537,31595,"Portland, OR",2297,"fair",null,"Blue","MC","D&C Motor Company",462861903,326751,null],
+[2021,30998,null,34378,"Puyallup, WA",2287,"",null,"Blue","PECD","CarMax Puyallup",null,null,30998,70287943,-1],
+[2021,31180,31265,22288,"Bellevue, WA",2272,"fair",47,"Gray","PECK","J&A Auto Sales",458716701,439239,31180],
+[2021,31998,32203,18232,"Minneapolis, MN",905,"fair",33,"Black","CK","CarMax Brooklyn Park",459931364,370600,32998,29179776,799],
+[2021,null,27848,48481,"Somerset, MA",471,"",4,"Black","MP","Stateline Subaru",462514861,67639,null]
+];
+// Cars on the Oct 16 page that are no longer listed (sold or pulled).
+const GONE = 12, SNAP = "Oct 16";
+
+// CarGurus dealer id -> [Google rating, Google review count, CarGurus dealer rating, CarGurus review count]
+const DEALER = {
+  47594:[3.8,2082,3.14,44], 52152:[4.5,406,null,0], 54474:[null,0,5,8], 59097:[null,0,2.5,2], 59859:[null,0,4.08,12],
+  60201:[null,0,4.25,12], 60344:[null,0,4.28,25], 60471:[null,0,1,1], 60788:[4.3,1636,3.4,15], 61893:[4.6,2244,3.29,7],
+  62096:[4.2,791,1.67,3], 63132:[null,0,5,1], 63715:[null,0,3,10], 64134:[4.9,6007,4.82,11], 64933:[null,0,null,0],
+  67639:[4.8,3073,4.63,8], 100624:[null,0,4.75,4], 194303:[4.7,60,5,1], 204521:[4.6,1783,4.27,11], 270465:[4.2,2478,4.17,12],
+  274987:[3.9,2606,4.23,13], 275159:[4.2,2205,4.5,8], 275796:[4.8,1556,5,3], 278398:[null,0,2.6,40], 278717:[null,0,4.64,14],
+  278750:[null,0,4,12], 279062:[null,0,4.6,10], 279874:[null,0,4.8,5], 280979:[4.5,382,3,6], 281782:[4.8,452,4.56,16],
+  282828:[4.7,863,4.61,18], 283100:[4.4,5269,4.33,9], 284507:[null,0,4.18,33], 285232:[null,0,3,10], 287749:[null,0,4.77,30],
+  288469:[4.6,1121,3.67,3], 291271:[4.5,4668,3.89,47], 291776:[4.8,3000,4.83,12], 295102:[4.9,5133,4.9,10], 295334:[4.5,945,5,1],
+  296700:[4.4,3646,4.5,2], 326751:[null,0,4.46,26], 336309:[4.5,634,2.55,11], 337830:[4.1,229,4.57,7], 339819:[4.4,51,5,1],
+  342789:[4.4,2218,4,72], 346734:[null,0,2.75,4], 352739:[3.5,249,4.71,7], 363681:[4.4,843,3.33,3], 367068:[4.8,972,4.17,6],
+  367696:[null,0,3.67,3], 369132:[null,0,4,2], 369877:[4.2,1984,3.42,12], 370600:[null,0,null,0], 374382:[null,0,3.27,163],
+  376043:[null,0,5,4], 399876:[4.7,158,5,3], 411035:[null,0,4.09,11], 413135:[null,0,3.22,144], 414514:[null,0,3.92,12],
+  414626:[null,0,3.65,23], 434531:[null,0,2.8,5], 439239:[null,0,4.6,20], 447001:[null,0,4.58,57], 451630:[null,0,4.56,18],
+  453965:[null,0,3.69,13], 460174:[null,0,2.71,7], 460413:[4.7,202,2.9,10], 460575:[4.7,45,3.86,7], 461211:[4.9,247,4.13,8],
+  464633:[4.1,3193,3.08,40]
+};
+const DEALER_PIVOT = 4.5, NO_GOOGLE = 4.3, CG_PRIOR = 3.9, CG_PRIOR_N = 5, CG_WEAK = 3.4, CG_PENALTY = 0.3;
+
+const PK = { M: "M Sport", P: "Premium", E: "Executive", C: "Convenience", K: "Parking Assist", D: "Driving Assist" };
+const VERDICTS = [
+  { key: "great", label: "Great", min: 8 },
+  { key: "good", label: "Good", min: 3 },
+  { key: "fair", label: "Fair", min: -3 },
+  { key: "high", label: "High", min: -8 },
+  { key: "over", label: "Overpriced", min: -Infinity }
+];
+const DRIVE_MAX = 320, NEW_DAYS = 13;
+
+const cars = RAW.map((r, i) => ({
+  i, y: r[0], price: r[1], cg: r[2], mi: r[3], loc: r[4], dist: r[5], rating: r[6], dom: r[7],
+  color: r[8], pk: r[9], seller: r[10], cgId: r[11] || null, spId: r[12] || null, was: r[13] == null ? null : r[13],
+  cm: r[14] || null, cmFee: r[15] == null ? null : r[15], M: r[9].includes("M") ? 1 : 0, CM: r[14] ? 1 : 0
+}));
+
+// ---- model: price = b0 + b1*(miles/10k) + b2*(year-2021) + b3*MSport + b4*CarMax ----
+const K = 5;
+const feat = (y, mi, m, cm) => [1, mi / 10000, y - 2021, m, cm];
+// Least squares by Gauss-Jordan on the normal equations. Returns coefficients and (X'X)^-1 for standard errors.
+function ols(rows) {
+  const A = Array.from({ length: K }, (_, i) => [...Array(K).fill(0), ...Array.from({ length: K }, (_, j) => i === j ? 1 : 0), 0]);
+  rows.forEach(c => {
+    const x = feat(c.y, c.mi, c.M, c.CM);
+    for (let i = 0; i < K; i++) { for (let j = 0; j < K; j++) A[i][j] += x[i] * x[j]; A[i][2 * K] += x[i] * c.price; }
+  });
+  for (let i = 0; i < K; i++) {
+    let p = i;
+    for (let r = i + 1; r < K; r++) if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
+    [A[i], A[p]] = [A[p], A[i]];
+    const d = A[i][i];
+    for (let c = 0; c <= 2 * K; c++) A[i][c] /= d;
+    for (let r = 0; r < K; r++) {
+      if (r === i) continue;
+      const f = A[r][i];
+      for (let c = 0; c <= 2 * K; c++) A[r][c] -= f * A[i][c];
+    }
+  }
+  return { b: A.map(row => row[2 * K]), inv: A.map(row => row.slice(K, 2 * K)) };
+}
+const predict = (b, y, mi, m, cm) => feat(y, mi, m, cm || 0).reduce((s, v, i) => s + v * b[i], 0);
+const usable = cars.filter(c => c.mi && c.price);
+let fit = ols(usable);
+const sdOf = (b, rows) => Math.sqrt(rows.reduce((s, c) => s + (c.price - predict(b, c.y, c.mi, c.M, c.CM)) ** 2, 0) / (rows.length - K));
+const sd0 = sdOf(fit.b, usable);
+const kept = usable.filter(c => Math.abs(c.price - predict(fit.b, c.y, c.mi, c.M, c.CM)) < 2.5 * sd0);
+const dropped = usable.filter(c => !kept.includes(c));
+fit = ols(kept);
+const B = fit.b;
+const RMSE = sdOf(B, kept);
+const PREM = B[4], PREM_SE = RMSE * Math.sqrt(fit.inv[4][4]), N_CM = kept.filter(c => c.CM).length;
+const mean = kept.reduce((s, c) => s + c.price, 0) / kept.length;
+const R2 = 1 - kept.reduce((s, c) => s + (c.price - predict(B, c.y, c.mi, c.M, c.CM)) ** 2, 0) / kept.reduce((s, c) => s + (c.price - mean) ** 2, 0);
+const withCg = usable.filter(c => c.cg);
+const CG_GAP = withCg.reduce((s, c) => s + Math.abs(predict(B, c.y, c.mi, c.M, c.CM) - c.cg), 0) / withCg.length;
+
+const money = v => v == null ? "" : "$" + Math.round(v).toLocaleString("en-US");
+const fmtPct = v => (v >= 0 ? "+" : "-") + Math.abs(v).toFixed(1);
+const verdictFor = pct => VERDICTS.find(v => pct >= v.min);
+const fW = document.getElementById("f-w");
+const weight = () => +fW.value;
+
+cars.forEach(c => {
+  if (c.mi && c.price) {
+    c.fair = predict(B, c.y, c.mi, c.M, 0); // fair price from non-CarMax sellers, so CarMax cars carry their premium as a worse deal
+    c.pct = (c.fair - c.price) / c.fair * 100;
+    c.v = verdictFor(c.pct);
+  } else { c.fair = null; c.pct = null; c.v = null; }
+  c.isNew = c.was == null && (c.dom == null || c.dom <= NEW_DAYS);
+  c.chg = c.was == null || c.price == null ? null : c.price - c.was;
+  if (c.cm && c.cmFee >= 0) { c.get = c.cmFee ? "CarMax transfer " + money(c.cmFee) : "Free CarMax transfer"; c.getCost = c.cmFee; }
+  else if (c.dist <= DRIVE_MAX) { c.get = "Drive " + c.dist + " mi"; c.getCost = 0; }
+  else if (c.cm) { c.get = "Not transferable"; c.getCost = null; }
+  else if (c.dist > 4000) { c.get = "Ocean freight"; c.getCost = null; }
+  else { c.getCost = Math.min(2000, Math.round((400 + 0.6 * c.dist) / 50) * 50); c.get = "Ship, about " + money(c.getCost); }
+  c.allin = c.getCost == null || c.price == null ? null : c.price + c.getCost;
+  const d = DEALER[c.spId] || [null, 0, null, 0];
+  c.gR = d[0]; c.gN = d[1]; c.cR = d[2]; c.cN = d[3];
+  const cgShrunk = c.cN ? (c.cN * c.cR + CG_PRIOR_N * CG_PRIOR) / (c.cN + CG_PRIOR_N) : CG_PRIOR;
+  c.cgWeak = c.cN > 0 && cgShrunk < CG_WEAK;
+  c.dstars = (c.gR == null ? NO_GOOGLE : c.gR) - (c.cgWeak ? CG_PENALTY : 0);
+  c.flags = [];
+  if (c.y === 2022) c.flags.push("2022: likely a Canadian-market car");
+  if (c.mi > 80000) c.flags.push("Past 80k battery warranty");
+  if (c.dom >= 120) c.flags.push("Listed " + c.dom + " days");
+  if (!c.cm && c.cgId && (c.rating === "" || c.rating === "outlier")) c.flags.push(c.rating === "outlier" ? "CarGurus calls it an outlier" : "CarGurus won't rate it");
+  if (c.cgWeak) c.flags.push("Weak CarGurus dealer reviews");
+  if (!c.mi) c.flags.push("No mileage listed");
+  if (!c.price) c.flags.push("No price listed");
+});
+const scorePicks = () => { const w = weight(); cars.forEach(c => { c.pick = c.pct == null ? null : c.pct + w * (c.dstars - DEALER_PIVOT); }); };
+
+// ---- market since the last snapshot ----
+(function since() {
+  const cuts = cars.filter(c => c.chg < 0).map(c => -c.chg).sort((a, b) => a - b);
+  const ups = cars.filter(c => c.chg > 0).length;
+  const fresh = cars.filter(c => c.isNew).length;
+  const med = cuts.length ? cuts[Math.floor(cuts.length / 2)] : 0;
+  document.getElementById("since").textContent = "Since " + SNAP + ": " + GONE + " cars sold or pulled, " + fresh + " new listings, " + cuts.length + " price cuts (median " + money(med) + "), " + ups + " increases.";
+})();
+
+// ---- model panel ----
+const sign = v => v < 0 ? "- " : "+ ";
+document.getElementById("formula").innerHTML =
+  '<span class="term">Fair price = <span class="k">' + money(B[0]) + '</span></span> ' +
+  '<span class="term">' + sign(B[1]) + '<span class="k">' + money(Math.abs(B[1])) + '</span> per 10k miles</span> ' +
+  '<span class="term">' + sign(B[2]) + '<span class="k">' + money(Math.abs(B[2])) + '</span> per model year newer than 2021</span> ' +
+  '<span class="term">' + sign(B[3]) + '<span class="k">' + money(Math.abs(B[3])) + '</span> if M Sport</span> ' +
+  '<span class="term">' + sign(B[4]) + '<span class="k">' + money(Math.abs(B[4])) + '</span> if at CarMax</span>';
+document.getElementById("s-prem").textContent = (PREM >= 0 ? "+" : "-") + money(Math.abs(PREM));
+document.getElementById("s-prem-l").textContent = "CarMax premium, +/-" + money(PREM_SE) + " (" + N_CM + " CarMax cars)";
+document.getElementById("s-rmse").textContent = "+/-" + money(RMSE);
+document.getElementById("s-r2").textContent = Math.round(R2 * 100) + "%";
+document.getElementById("s-cg").textContent = money(CG_GAP);
+document.getElementById("s-out").textContent = dropped.length ? dropped.map(c => c.loc + " at " + money(c.price)).join("; ") : "none this time";
+
+// ---- deal checker ----
+const cIn = ["c-year", "c-miles", "c-price", "c-m", "c-dealer", "c-cm"].map(id => document.getElementById(id));
+let touched = false;
+function runCheck() {
+  const y = +cIn[0].value, mi = +cIn[1].value || 0, price = +cIn[2].value || 0, m = cIn[3].checked ? 1 : 0, cm = cIn[5].checked ? 1 : 0;
+  const dr = parseFloat(cIn[4].value);
+  const fair = predict(B, y, mi, m, cm);
+  const pct = (fair - price) / fair * 100;
+  const v = verdictFor(pct);
+  const diff = fair - price;
+  const out = document.getElementById("c-out");
+  const warn = mi > 80000 ? '<div class="note" style="flex-basis:100%">Past 80,000 miles, so the 8-year / 80,000-mile battery warranty is used up.</div>' : "";
+  const cmNote = cm ? '<div class="note" style="flex-basis:100%">Fair price includes the ' + money(PREM) + ' CarMax premium. The same car from a non-CarMax seller would be fair at ' + money(fair - PREM) + '.</div>' : "";
+  const pick = isNaN(dr) ? "" : '<div class="note" style="flex-basis:100%">With the dealer factored in at ' + weight() + '% per star: Pick <b class="num">' + fmtPct(pct + weight() * (dr - DEALER_PIVOT)) + '</b>. The table\'s Pick scores CarMax cars against the non-CarMax price, so it will read lower for them.</div>';
+  out.innerHTML =
+    '<div><div class="note">Model fair price</div><div class="big num">' + money(fair) + '</div></div>' +
+    '<div><div class="note">Asking is</div><div class="big num">' + money(Math.abs(diff)) + ' ' + (diff >= 0 ? "under" : "over") + '</div></div>' +
+    '<div><span class="chip v-' + v.key + '">' + v.label + '</span> <span class="num">' + fmtPct(pct) + '%</span></div>' +
+    '<div class="note" style="flex-basis:100%">Most fairly priced cars like this land between ' + money(fair - RMSE) + ' and ' + money(fair + RMSE) + '.</div>' + cmNote + pick + warn;
+  if (touched) document.getElementById("c-note").textContent = "";
+}
+document.getElementById("checker").addEventListener("input", () => { touched = true; runCheck(); });
+document.getElementById("checker").addEventListener("submit", e => e.preventDefault());
+
+// ---- chart ----
+const VCOL = { great: "var(--great)", good: "var(--good)", fair: "var(--fair)", high: "var(--high)", over: "var(--over)" };
+document.getElementById("legend").innerHTML = VERDICTS.map(v => '<span><i style="background:' + VCOL[v.key] + '"></i>' + v.label + '</span>').join("") +
+  '<span><i class="ring"></i>CarMax</span><span>Lines: model fair price (non-CarMax), no M Sport</span><span>Hover a dot to see the car and its gap to fair; click it to jump to its row.</span>';
+const svg = document.getElementById("chart"), chartPanel = document.getElementById("chart-panel"), tip = document.getElementById("tip");
+const W = 760, H = 340, L = 58, R = 92, T = 14, Bm = 40;
+const x0 = 0, x1 = 140000, y0 = 16000, y1 = 34000;
+const sx = v => L + (v - x0) / (x1 - x0) * (W - L - R);
+const sy = v => T + (1 - (v - y0) / (y1 - y0)) * (H - T - Bm);
+const clampY = v => Math.max(y0, Math.min(y1, v));
+(function drawChart() {
+  let s = "";
+  for (let v = y0; v <= y1; v += 2000) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + sy(v) + '" y2="' + sy(v) + '" stroke="var(--line)" stroke-width="1"/>' + '<text x="' + (L - 8) + '" y="' + (sy(v) + 4) + '" text-anchor="end">$' + (v / 1000) + 'k</text>';
+  for (let v = x0; v <= x1; v += 20000) s += '<line x1="' + sx(v) + '" x2="' + sx(v) + '" y1="' + T + '" y2="' + (H - Bm) + '" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"/>' + '<text x="' + sx(v) + '" y="' + (H - Bm + 18) + '" text-anchor="middle">' + (v / 1000) + 'k mi</text>';
+  [[2021, "2021"], [2020, "2020"]].forEach(([yr, lab]) => {
+    // Stop the line where it leaves the bottom of the plot.
+    const xe = Math.min(130000, (y0 - predict(B, yr, 0, 0, 0)) / B[1] * 10000);
+    const a = predict(B, yr, 10000, 0, 0), z = predict(B, yr, xe, 0, 0);
+    s += '<line x1="' + sx(10000) + '" y1="' + sy(a) + '" x2="' + sx(xe) + '" y2="' + sy(z) + '" stroke="var(--accent)" stroke-width="2" stroke-dasharray="' + (yr === 2020 ? "6 4" : "0") + '"/>';
+    s += '<text x="' + (sx(xe) + 6) + '" y="' + (sy(z) - 4) + '" style="fill:var(--accent);font-weight:600">' + lab + ' fair</text>';
+  });
+  s += '<g id="gap"></g>';
+  cars.filter(c => c.v && c.mi <= x1 && c.price >= y0 && c.price <= y1).forEach(c => {
+    const r = c.y === 2020 ? 4 : 5;
+    s += '<circle class="dot" data-i="' + c.i + '" data-r="' + r + '" tabindex="0" role="button" aria-label="' + c.y + ', ' + money(c.price) + ', ' + c.mi.toLocaleString("en-US") + ' miles, ' + c.loc + ', ' + c.v.label + (c.CM ? ', CarMax' : '') + '" cx="' + sx(c.mi).toFixed(1) + '" cy="' + sy(c.price).toFixed(1) + '" r="' + r + '" fill="' + VCOL[c.v.key] + '" fill-opacity="0.85" stroke="' + (c.CM ? "var(--accent)" : "var(--surface)") + '" stroke-width="' + (c.CM ? 2.4 : 1.2) + '"></circle>';
+  });
+  s += '<g id="ring" pointer-events="none"></g>';
+  svg.innerHTML = s;
+})();
+
+// ---- chart hover: enlarge the dot and draw its gap to the model's fair price ----
+let onDot = null;
+function setOn(i) {
+  if (onDot) { onDot.classList.remove("on"); onDot.setAttribute("r", onDot.dataset.r); }
+  const gap = document.getElementById("gap");
+  gap.innerHTML = "";
+  document.getElementById("ring").innerHTML = "";
+  onDot = i == null ? null : svg.querySelector('.dot[data-i="' + i + '"]');
+  if (!onDot) return;
+  const c = cars[i], x = sx(c.mi), yp = sy(c.price), yf = sy(clampY(c.fair));
+  onDot.classList.add("on");
+  onDot.setAttribute("r", 8);
+  gap.innerHTML = '<line x1="' + x + '" x2="' + x + '" y1="' + yp + '" y2="' + yf + '" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="3 3"/>' +
+    '<line x1="' + (x - 8) + '" x2="' + (x + 8) + '" y1="' + yf + '" y2="' + yf + '" stroke="var(--ink)" stroke-width="2"/>';
+  document.getElementById("ring").innerHTML = '<circle cx="' + x + '" cy="' + yp + '" r="10" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+}
+function showTip(i) {
+  setOn(i);
+  if (!onDot) return;
+  const c = cars[i];
+  tip.innerHTML = '<b>' + c.y + ', ' + money(c.price) + '</b> <span class="chip v-' + c.v.key + '">' + c.v.label + '</span><br>' +
+    money(Math.abs(c.fair - c.price)) + ' (' + Math.abs(c.pct).toFixed(1) + '%) ' + (c.pct >= 0 ? "under" : "over") + ' model fair of ' + money(c.fair) + '<br>' +
+    c.mi.toLocaleString("en-US") + ' mi, ' + c.loc + '<br><span class="seller">' + c.seller + '. Click to show in the table.</span>';
+  tip.hidden = false;
+  const box = chartPanel.getBoundingClientRect(), r = onDot.getBoundingClientRect();
+  // Sit beside the dot, not over it, so the gap line to fair stays visible.
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  const cx = r.left - box.left + r.width / 2, cy = r.top - box.top + r.height / 2;
+  const x = cx + 16 + w <= box.width - 4 ? cx + 16 : Math.max(4, cx - 16 - w);
+  tip.style.left = x + "px";
+  tip.style.top = Math.max(4, Math.min(box.height - h - 4, cy - h / 2)) + "px";
+}
+function hideTip() { tip.hidden = true; setOn(null); }
+const dotOf = el => el && el.closest ? el.closest(".dot") : null;
+svg.addEventListener("mouseover", e => { const d = dotOf(e.target); if (d) showTip(+d.dataset.i); });
+svg.addEventListener("mouseout", e => { if (dotOf(e.target) && !dotOf(e.relatedTarget)) hideTip(); });
+svg.addEventListener("focusin", e => { const d = dotOf(e.target); if (d) showTip(+d.dataset.i); });
+svg.addEventListener("focusout", hideTip);
+svg.addEventListener("click", e => { const d = dotOf(e.target); if (d) reveal(+d.dataset.i); });
+svg.addEventListener("keydown", e => { const d = dotOf(e.target); if (d && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); reveal(+d.dataset.i); } });
+
+// ---- table ----
+const tbody = document.querySelector("#tbl tbody");
+const VORDER = { great: 0, good: 1, fair: 2, high: 3, over: 4 };
+let sortKey = "pick", sortDir = -1, selected = null;
+const fDist = document.getElementById("f-dist"), fDealer = document.getElementById("f-dealer"), fMiles = document.getElementById("f-miles"), fHi = document.getElementById("f-hi"), fCm = document.getElementById("f-cm");
+const shown = c => c.dist <= +fDist.value && c.dstars >= +fDealer.value && !(fMiles.checked && c.mi > 80000) && !(fHi.checked && c.dist > 4000) && !(fCm.checked && c.CM);
+try {
+  const saved = JSON.parse(localStorage.getItem("x3f4") || "null");
+  if (saved) { fDist.value = saved.d; fDealer.value = saved.r; fMiles.checked = saved.m; fHi.checked = saved.h; fCm.checked = !!saved.c; fW.value = saved.w; sortKey = saved.k || sortKey; sortDir = saved.s || sortDir; }
+} catch (e) {}
+const sortVal = (c, k) => {
+  if (k === "verdict") return c.v ? VORDER[c.v.key] : 9;
+  if (k === "pk") return c.pk.length + (c.M ? 10 : 0);
+  if (k === "src") return c.cm ? "CarMax" : "CarGurus";
+  if (k === "get") return c.getCost == null ? 1e9 : c.getCost;
+  return c[k];
+};
+function dealerCell(c) {
+  const g = c.gR == null ? '<span class="dl">Google n/a</span>' : '<span class="dl"><b>' + c.gR.toFixed(1) + '</b> Google (' + c.gN.toLocaleString("en-US") + ')</span>';
+  const cg = c.cN ? '<span class="dl seller' + (c.cgWeak ? ' weak' : '') + '"><b>' + c.cR.toFixed(1) + '</b> CarGurus (' + c.cN + ')</span>' : '<span class="dl seller">CarGurus n/a</span>';
+  return g + cg;
+}
+function chgCell(c) {
+  if (c.isNew) return '<span class="chip v-new">New</span>';
+  if (c.chg == null) return "";
+  if (c.chg === 0) return '<span class="seller">same</span>';
+  return '<span class="' + (c.chg < 0 ? "pct-pos" : "pct-neg") + '">' + (c.chg < 0 ? "-" : "+") + money(Math.abs(c.chg)) + '</span><span class="seller">was ' + money(c.was) + '</span>';
+}
+function render() {
+  document.getElementById("f-wv").textContent = weight() + "%";
+  scorePicks();
+  const rows = cars.filter(shown);
+  rows.sort((a, b) => {
+    const va = sortVal(a, sortKey), vb = sortVal(b, sortKey);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return (va < vb ? -1 : va > vb ? 1 : 0) * sortDir;
+  });
+  tbody.innerHTML = rows.map(c => {
+    const chip = c.v ? '<span class="chip v-' + c.v.key + '">' + c.v.label + '</span>' : '<span class="chip v-none">n/a</span>';
+    const pct = c.pct == null ? "" : '<span class="' + (c.pct >= 0 ? "pct-pos" : "pct-neg") + '">' + fmtPct(c.pct) + '%</span>';
+    const pick = c.pick == null ? "" : '<span class="pick ' + (c.pick >= 0 ? "pct-pos" : "pct-neg") + '">' + fmtPct(c.pick) + '</span>';
+    const pk = [...c.pk].sort((a, b) => (a === "M" ? -1 : b === "M" ? 1 : 0)).map(p => '<span class="pk' + (p === "M" ? " m" : "") + '">' + PK[p] + '</span>').join("");
+    const link = c.cm
+      ? '<a href="https://www.carmax.com/car/' + c.cm + '" target="_blank" rel="noopener">CarMax</a>'
+      : '<a href="https://www.cargurus.com/details/' + c.cgId + '" target="_blank" rel="noopener">CarGurus</a>';
+    const flags = c.flags.map(f => '<span class="flag">' + f + '</span>').join("");
+    return '<tr data-i="' + c.i + '"' + (c.i === selected ? ' class="sel"' : '') + '>' +
+      '<td class="r num">' + pick + '</td>' +
+      '<td>' + chip + flags + '</td>' +
+      '<td class="r num">' + pct + '</td>' +
+      '<td class="r num"><b>' + (c.price ? money(c.price) : "?") + '</b></td>' +
+      '<td class="r num">' + chgCell(c) + '</td>' +
+      '<td class="r num">' + money(c.fair) + '</td>' +
+      '<td class="r num">' + money(c.cg) + '</td>' +
+      '<td class="num">' + c.y + '</td>' +
+      '<td class="r num">' + (c.mi ? c.mi.toLocaleString("en-US") : "?") + '</td>' +
+      '<td>' + pk + '</td>' +
+      '<td>' + c.loc + '<span class="seller">' + c.seller + ', ' + c.color + '</span></td>' +
+      '<td class="num">' + dealerCell(c) + '</td>' +
+      '<td class="r num">' + c.dist.toLocaleString("en-US") + '</td>' +
+      '<td>' + c.get + '</td>' +
+      '<td class="r num">' + money(c.allin) + '</td>' +
+      '<td class="r num">' + (c.dom == null ? "" : c.dom) + '</td>' +
+      '<td>' + link + '</td>' +
+      '</tr>';
+  }).join("");
+  document.getElementById("count").textContent = rows.length + " of " + cars.length + " cars";
+  document.querySelectorAll("#tbl th").forEach(th => {
+    if (th.dataset.k === sortKey) th.setAttribute("aria-sort", sortDir === 1 ? "ascending" : "descending");
+    else th.removeAttribute("aria-sort");
+  });
+  try { localStorage.setItem("x3f4", JSON.stringify({ d: fDist.value, r: fDealer.value, m: fMiles.checked, h: fHi.checked, c: fCm.checked, w: fW.value, k: sortKey, s: sortDir })); } catch (e) {}
+}
+document.querySelectorAll("#tbl th").forEach(th => th.querySelector("button").addEventListener("click", () => {
+  const k = th.dataset.k;
+  if (k === sortKey) sortDir = -sortDir;
+  else { sortKey = k; sortDir = (k === "pick" || k === "pct" || k === "y" || k === "dstars") ? -1 : 1; }
+  render();
+}));
+[fDist, fDealer, fMiles, fHi, fCm].forEach(el => el.addEventListener("change", render));
+fW.addEventListener("input", () => { render(); runCheck(); });
+// Clicking a chart dot loosens any filter hiding that car, then scrolls to and highlights its row.
+function reveal(i) {
+  const c = cars[i];
+  if (!shown(c)) {
+    if (c.dist > +fDist.value) fDist.value = "99999";
+    if (c.dstars < +fDealer.value) fDealer.value = "0";
+    if (c.mi > 80000) fMiles.checked = false;
+    if (c.dist > 4000) fHi.checked = false;
+    if (c.CM) fCm.checked = false;
+  }
+  selected = i;
+  render();
+  tbody.querySelector('tr[data-i="' + i + '"]').scrollIntoView({ behavior: "smooth", block: "center" });
+}
+tbody.addEventListener("mouseover", e => { const tr = e.target.closest("tr"); if (tr) setOn(+tr.dataset.i); });
+tbody.addEventListener("mouseleave", () => setOn(null));
+render();
+runCheck();
+</script>
+</body>
+</html>

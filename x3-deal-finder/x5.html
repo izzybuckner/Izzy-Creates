@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>CarMax X5 Plug-in Prices</title>
+<script>try { const a = localStorage.getItem("vitepress-theme-appearance"); if (a === "dark" || a === "light") document.documentElement.dataset.theme = a; } catch (e) {}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="nav"><a href="index.html">X3 30e deal finder</a><a href="x5.html" aria-current="page">CarMax X5 plug-in price points</a></nav>
+    <div class="eyebrow">Used BMW X5 xDrive45e / xDrive50e / CarMax asking prices</div>
+    <h1>CarMax X5 Plug-in Price Points</h1>
+    <p class="sub">20 CarMax listings of the X5 plug-in hybrid (2021 to 2025), typed in from CarMax app screenshots on Nov 11, 2026 from the search "Used Large, Midsize and Very Large 2021-2025 Plug-in" (23 matches; 20 captured). Every car here is a CarMax car, so this page shows how CarMax prices an X5 by year and miles. It cannot measure a CarMax premium the way the X3 page does, because there are no non-CarMax X5 prices alongside to compare with.</p>
+    <div class="sources">
+      <span class="src"><b>CarMax</b> 20 listings</span>
+      <span class="src"><b>Not captured</b> color, packages, stock numbers, dealer reviews</span>
+    </div>
+  </header>
+
+  <section class="grid2">
+    <div class="panel" aria-labelledby="model-h">
+      <h2 id="model-h">How CarMax prices an X5</h2>
+      <div class="formula num" id="formula"></div>
+      <div class="stats">
+        <div class="stat hl"><div class="v num" id="s-n"></div><div class="l">listings in the fit</div></div>
+        <div class="stat"><div class="v num" id="s-rmse"></div><div class="l">typical miss either way</div></div>
+        <div class="stat"><div class="v num" id="s-r2"></div><div class="l">of price spread explained</div></div>
+        <div class="stat"><div class="v num" id="s-med"></div><div class="l">median asking price</div></div>
+      </div>
+      <p class="note">Ordinary least squares on year and miles, fit here in the page. The three 2025 cars are all xDrive50e and every other car is an xDrive45e, so year and trim cannot be told apart; the year step includes the 50e upgrade. "Vs CarMax norm" compares each car to this formula, so it flags the cheap and pricey CarMax cars, not a premium over other sellers.</p>
+    </div>
+    <div class="panel" aria-labelledby="check-h">
+      <h2 id="check-h">Check a CarMax X5</h2>
+      <form class="checker" id="checker" autocomplete="off">
+        <label class="f" for="c-year">Model year
+          <select id="c-year"><option>2021</option><option>2022</option><option selected>2023</option><option>2024</option><option>2025</option></select>
+        </label>
+        <label class="f" for="c-miles">Miles
+          <input id="c-miles" type="number" inputmode="numeric" min="0" step="1000" value="40000">
+        </label>
+        <label class="f" for="c-price">Asking price
+          <input id="c-price" type="number" inputmode="numeric" min="0" step="100" value="40000">
+        </label>
+      </form>
+      <div class="result" id="c-out" aria-live="polite"></div>
+      <p class="note">Shows where a CarMax X5 plug-in sits against the 20 below. Outside 2021 to 2025 and about 20k to 56k miles it is guessing.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="chart-panel" aria-labelledby="chart-h">
+    <h2 id="chart-h">Price vs. miles</h2>
+    <div class="legend" id="legend"></div>
+    <div class="chart-box"><svg id="chart" viewBox="0 0 760 340" role="group" aria-label="Scatter plot of CarMax X5 plug-in asking price against mileage"></svg></div>
+    <div class="tip" id="tip" hidden></div>
+  </section>
+
+  <section aria-labelledby="list-h" style="display:grid;gap:12px">
+    <h2 id="list-h">All 20 listings</h2>
+    <div class="table-box">
+      <table id="tbl" class="narrow">
+        <thead><tr>
+          <th data-k="y"><button type="button">Year</button></th>
+          <th data-k="trim"><button type="button">Trim</button></th>
+          <th class="r" data-k="mi"><button type="button">Miles</button></th>
+          <th class="r" data-k="price"><button type="button">Price</button></th>
+          <th class="r" data-k="fair"><button type="button">CarMax norm</button></th>
+          <th class="r" data-k="pct"><button type="button">Vs CarMax norm</button></th>
+          <th class="r" data-k="ship"><button type="button">Shipping</button></th>
+          <th class="r" data-k="allin"><button type="button">All-in</button></th>
+          <th data-k="loc"><button type="button">From</button></th>
+          <th data-k="note"><button type="button">Note</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p><b>Shipping</b> is CarMax's quoted fee to ship to the search area (22903), with the delivery window CarMax showed. Two cars were on hold for a shopper and show a pickup store instead of a shipping quote. <b>All-in</b> is price plus shipping, before tax, title and CarMax's processing fee.</p>
+    <p><b>Price drop</b> means CarMax showed a struck-through earlier price. <b>On hold</b> means another shopper had it reserved. <b>Popular</b> was CarMax's own badge.</p>
+    <p><b>Vs CarMax norm</b> is how far under (+) or over (-) the formula's price each car is, as a share of that price. Prices as listed on Nov 11, 2026. Listings change daily.</p>
+  </footer>
+</div>
+
+<script>
+// year, trim, miles, price, earlier price, shipping, from, status
+const RAW = [
+[2021,"xDrive45e",56000,31998,null,null,"Gaithersburg, MD","On hold (pickup store)"],
+[2021,"xDrive45e",38000,38998,null,149,"NC",""],
+[2022,"xDrive45e",54000,33998,null,149,"NC",""],
+[2022,"xDrive45e",22000,43998,null,149,"NC",""],
+[2021,"xDrive45e",24000,43998,null,149,"NC",""],
+[2023,"xDrive45e",53000,36998,null,249,"NJ",""],
+[2025,"xDrive50e",46000,44998,null,149,"TN","Popular"],
+[2023,"xDrive45e",39000,41998,42998,549,"OH","Price drop"],
+[2025,"xDrive50e",44000,45998,null,249,"NJ","Popular"],
+[2023,"xDrive45e",45000,48998,null,149,"NC",""],
+[2022,"xDrive45e",43000,37998,null,399,"KY",""],
+[2023,"xDrive45e",24000,46998,null,349,"CT",""],
+[2025,"xDrive50e",49000,44998,null,249,"NY","Popular"],
+[2022,"xDrive45e",30000,47998,48998,349,"CT","Price drop"],
+[2023,"xDrive45e",56000,36998,null,349,"GA",""],
+[2022,"xDrive45e",46000,38998,39998,349,"GA","Price drop"],
+[2021,"xDrive45e",20000,37998,38998,299,"GA","Price drop"],
+[2023,"xDrive45e",37000,43998,44998,null,"Norwood, MA","On hold (pickup store), price drop"],
+[2021,"xDrive45e",33000,37998,null,499,"MI",""],
+[2023,"xDrive45e",37000,44998,null,699,"TN",""]
+];
+const cars = RAW.map((r, i) => ({ i, y: r[0], trim: r[1], mi: r[2], price: r[3], was: r[4], ship: r[5], loc: r[6], note: r[7] }));
+const money = v => v == null ? "" : "$" + Math.round(v).toLocaleString("en-US");
+const fmtPct = v => (v >= 0 ? "+" : "-") + Math.abs(v).toFixed(1);
+const K = 3, feat = (y, mi) => [1, mi / 10000, y - 2023];
+function ols(rows) {
+  const A = Array.from({ length: K }, () => Array(K + 1).fill(0));
+  rows.forEach(c => { const x = feat(c.y, c.mi); for (let i = 0; i < K; i++) { for (let j = 0; j < K; j++) A[i][j] += x[i] * x[j]; A[i][K] += x[i] * c.price; } });
+  for (let i = 0; i < K; i++) {
+    let p = i; for (let r = i + 1; r < K; r++) if (Math.abs(A[r][i]) > Math.abs(A[p][i])) p = r;
+    [A[i], A[p]] = [A[p], A[i]];
+    for (let r = 0; r < K; r++) { if (r === i) continue; const f = A[r][i] / A[i][i]; for (let c = i; c <= K; c++) A[r][c] -= f * A[i][c]; }
+  }
+  return A.map((row, i) => row[K] / row[i]);
+}
+const predict = (b, y, mi) => feat(y, mi).reduce((s, v, i) => s + v * b[i], 0);
+const B = ols(cars);
+const rmse = Math.sqrt(cars.reduce((s, c) => s + (c.price - predict(B, c.y, c.mi)) ** 2, 0) / (cars.length - K));
+const mean = cars.reduce((s, c) => s + c.price, 0) / cars.length;
+const R2 = 1 - cars.reduce((s, c) => s + (c.price - predict(B, c.y, c.mi)) ** 2, 0) / cars.reduce((s, c) => s + (c.price - mean) ** 2, 0);
+const sorted = cars.map(c => c.price).sort((a, b) => a - b);
+const median = (sorted[9] + sorted[10]) / 2;
+const VERDICTS = [{ key: "great", label: "Cheap for CarMax", min: 8 }, { key: "good", label: "Below norm", min: 3 }, { key: "fair", label: "At norm", min: -3 }, { key: "high", label: "Above norm", min: -8 }, { key: "over", label: "Pricey for CarMax", min: -Infinity }];
+const verdictFor = p => VERDICTS.find(v => p >= v.min);
+cars.forEach(c => { c.fair = predict(B, c.y, c.mi); c.pct = (c.fair - c.price) / c.fair * 100; c.v = verdictFor(c.pct); c.allin = c.ship == null ? null : c.price + c.ship; });
+
+const sign = v => v < 0 ? "- " : "+ ";
+document.getElementById("formula").innerHTML =
+  '<span class="term">CarMax price = <span class="k">' + money(B[0]) + '</span> (a 2023 at 0 miles)</span> ' +
+  '<span class="term">' + sign(B[1]) + '<span class="k">' + money(Math.abs(B[1])) + '</span> per 10k miles</span> ' +
+  '<span class="term">' + sign(B[2]) + '<span class="k">' + money(Math.abs(B[2])) + '</span> per model year newer than 2023</span>';
+document.getElementById("s-n").textContent = cars.length;
+document.getElementById("s-rmse").textContent = "+/-" + money(rmse);
+document.getElementById("s-r2").textContent = Math.round(R2 * 100) + "%";
+document.getElementById("s-med").textContent = money(median);
+
+function runCheck() {
+  const y = +document.getElementById("c-year").value, mi = +document.getElementById("c-miles").value || 0, price = +document.getElementById("c-price").value || 0;
+  const fair = predict(B, y, mi), pct = (fair - price) / fair * 100, v = verdictFor(pct), diff = fair - price;
+  document.getElementById("c-out").innerHTML =
+    '<div><div class="note">CarMax norm</div><div class="big num">' + money(fair) + '</div></div>' +
+    '<div><div class="note">Asking is</div><div class="big num">' + money(Math.abs(diff)) + ' ' + (diff >= 0 ? "under" : "over") + '</div></div>' +
+    '<div><span class="chip v-' + v.key + '">' + v.label + '</span> <span class="num">' + fmtPct(pct) + '%</span></div>' +
+    '<div class="note" style="flex-basis:100%">CarMax X5s like this typically sit between ' + money(fair - rmse) + ' and ' + money(fair + rmse) + '.</div>';
+}
+document.getElementById("checker").addEventListener("input", runCheck);
+document.getElementById("checker").addEventListener("submit", e => e.preventDefault());
+runCheck();
+
+// ---- chart ----
+const YCOL = { 2021: "var(--fair)", 2022: "var(--high)", 2023: "var(--accent)", 2025: "var(--great)" };
+document.getElementById("legend").innerHTML = [2021, 2022, 2023, 2025].map(y => '<span><i style="background:' + YCOL[y] + '"></i>' + y + (y === 2025 ? " (xDrive50e)" : "") + '</span>').join("") + '<span>Lines: CarMax norm for 2021, 2023 and 2025</span><span>Hover a dot for the car.</span>';
+const svg = document.getElementById("chart"), panel = document.getElementById("chart-panel"), tip = document.getElementById("tip");
+const W = 760, H = 340, L = 58, R = 40, T = 14, Bm = 40, x0 = 10000, x1 = 60000, y0 = 30000, y1 = 50000;
+const sx = v => L + (v - x0) / (x1 - x0) * (W - L - R), sy = v => T + (1 - (v - y0) / (y1 - y0)) * (H - T - Bm);
+(function draw() {
+  let s = "";
+  for (let v = y0; v <= y1; v += 4000) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + sy(v) + '" y2="' + sy(v) + '" stroke="var(--line)"/><text x="' + (L - 8) + '" y="' + (sy(v) + 4) + '" text-anchor="end">$' + (v / 1000) + 'k</text>';
+  for (let v = x0; v <= x1; v += 10000) s += '<line x1="' + sx(v) + '" x2="' + sx(v) + '" y1="' + T + '" y2="' + (H - Bm) + '" stroke="var(--line)" stroke-dasharray="2 4"/><text x="' + sx(v) + '" y="' + (H - Bm + 18) + '" text-anchor="middle">' + (v / 1000) + 'k mi</text>';
+  [2021, 2023, 2025].forEach(yr => {
+    const a = predict(B, yr, x0), z = predict(B, yr, x1);
+    s += '<line x1="' + sx(x0) + '" y1="' + sy(a) + '" x2="' + sx(x1) + '" y2="' + sy(z) + '" stroke="' + YCOL[yr] + '" stroke-width="1.6" stroke-dasharray="6 4" opacity="0.7"/>';
+  });
+  cars.forEach(c => { s += '<circle class="dot" data-i="' + c.i + '" tabindex="0" aria-label="' + c.y + ' ' + c.trim + ', ' + money(c.price) + ', ' + c.mi.toLocaleString("en-US") + ' miles, ' + c.loc + '" cx="' + sx(c.mi) + '" cy="' + sy(c.price) + '" r="5.5" fill="' + YCOL[c.y] + '" fill-opacity="0.9" stroke="var(--surface)" stroke-width="1.2"></circle>'; });
+  svg.innerHTML = s;
+})();
+function showTip(el) {
+  const c = cars[+el.dataset.i];
+  tip.innerHTML = '<b>' + c.y + ' ' + c.trim + ', ' + money(c.price) + '</b><br>' + c.mi.toLocaleString("en-US") + ' mi, from ' + c.loc + '<br>' + fmtPct(c.pct) + '% vs CarMax norm of ' + money(c.fair) + (c.note ? '<br><span class="seller">' + c.note + '</span>' : '');
+  tip.hidden = false;
+  const box = panel.getBoundingClientRect(), r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+  const cx = r.left - box.left + r.width / 2, cy = r.top - box.top + r.height / 2;
+  tip.style.left = (cx + 14 + w <= box.width - 4 ? cx + 14 : Math.max(4, cx - 14 - w)) + "px";
+  tip.style.top = Math.max(4, Math.min(box.height - h - 4, cy - h / 2)) + "px";
+}
+const dotOf = e => e && e.closest ? e.closest(".dot") : null;
+svg.addEventListener("mouseover", e => { const d = dotOf(e.target); if (d) showTip(d); });
+svg.addEventListener("mouseout", e => { if (dotOf(e.target) && !dotOf(e.relatedTarget)) tip.hidden = true; });
+svg.addEventListener("focusin", e => { const d = dotOf(e.target); if (d) showTip(d); });
+svg.addEventListener("focusout", () => { tip.hidden = true; });
+
+// ---- table ----
+const tbody = document.querySelector("#tbl tbody");
+let sortKey = "price", sortDir = 1;
+function render() {
+  const rows = [...cars].sort((a, b) => { const va = a[sortKey], vb = b[sortKey]; if (va == null) return 1; if (vb == null) return -1; return (va < vb ? -1 : va > vb ? 1 : 0) * sortDir; });
+  tbody.innerHTML = rows.map(c =>
+    '<tr><td class="num">' + c.y + '</td><td>' + c.trim + '</td><td class="r num">' + c.mi.toLocaleString("en-US") + '</td>' +
+    '<td class="r num"><b>' + money(c.price) + '</b>' + (c.was ? '<span class="seller">was ' + money(c.was) + '</span>' : '') + '</td>' +
+    '<td class="r num">' + money(c.fair) + '</td>' +
+    '<td class="r num"><span class="' + (c.pct >= 0 ? "pct-pos" : "pct-neg") + '">' + fmtPct(c.pct) + '%</span></td>' +
+    '<td class="r num">' + (c.ship == null ? "n/a" : money(c.ship)) + '</td><td class="r num">' + money(c.allin) + '</td>' +
+    '<td>' + c.loc + '</td><td>' + (c.note ? '<span class="flag">' + c.note + '</span>' : "") + '</td></tr>').join("");
+  document.querySelectorAll("#tbl th").forEach(th => { if (th.dataset.k === sortKey) th.setAttribute("aria-sort", sortDir === 1 ? "ascending" : "descending"); else th.removeAttribute("aria-sort"); });
+}
+document.querySelectorAll("#tbl th").forEach(th => th.querySelector("button").addEventListener("click", () => {
+  const k = th.dataset.k; if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === "pct" ? -1 : 1; } render();
+}));
+render();
+</script>
+</body>
+</html>
