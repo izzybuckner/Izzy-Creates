@@ -21,6 +21,7 @@
     <p class="sub since" id="since"></p>
     <div class="sources">
       <span class="src"><b>CarGurus</b> 71 listings</span>
+      <span class="src"><b>Added Nov 12</b> X Motors VA (new listing); Edmunds price update for the AutoGiant car</span>
       <span class="src"><b>CarMax</b> 10 (9 also on CarGurus, merged). Used to measure the CarMax premium</span>
       <span class="src"><b>Dealer reviews</b> Google for 36 dealers, CarGurus for all</span>
       <span class="src"><b>Cars.com, eBay Motors</b> not re-checked (no extra cars on Oct 16)</span>
@@ -242,7 +243,7 @@ const RAW = [
 [2021,25423,25477,55467,"Spencerport, NY",363,"fair",8,"Gray","PK","Summit View Auto",462112110,282828,null],
 [2021,25488,25404,49222,"Encino, CA",2226,"fair",22,"White","C","Mercedes-Benz of Encino",460962777,63715,25888],
 [2021,25488,23606,70762,"Chicago, IL",548,"high",13,"Black","MP","Perillo BMW",461726485,60788,25488],
-[2021,25494,27032,36438,"Indianapolis, IN",423,"good",30,"Black","E","AutoGiant USA",460210152,342789,25994],
+[2021,24737,27032,36438,"Indianapolis, IN",423,"good",30,"Black","E","AutoGiant USA",460210152,342789,25994,null,null,"https://www.edmunds.com/bmw/x3/2021/vin/5UXTS1C00M9G18804/","Edmunds","Price per Edmunds on Nov 12 (VIN 5UXTS1C00M9G18804); CarGurus showed $25,494"],
 [2021,25500,26050,36450,"Orlando, FL",679,"fair",13,"White","P","HGreg.com Orlando",461689138,413135,26800],
 [2021,25800,27305,30350,"City of Industry, CA",2198,"good",160,"Black","","Carz 88 Auto",448752491,460174,27499],
 [2021,25818,24556,59471,"San Rafael, CA",2368,"high",53,"White","MC","Marin Mazda",458214576,285232,null],
@@ -272,6 +273,7 @@ const RAW = [
 [2021,30998,null,34378,"Puyallup, WA",2287,"",null,"Blue","PECD","CarMax Puyallup",null,null,30998,70287943,-1],
 [2021,31180,31265,22288,"Bellevue, WA",2272,"fair",47,"Gray","PECK","J&A Auto Sales",458716701,439239,31180],
 [2021,31998,32203,18232,"Minneapolis, MN",905,"fair",33,"Black","CK","CarMax Brooklyn Park",459931364,370600,32998,29179776,799],
+[2021,21000,null,67029,"Sterling, VA",100,"",56,"","","X Motors VA (Dennis Villarroel Castedo)",null,null,null,null,null,"https://www.xmotorsva.com/inventory/bmw/x3/0909261/","X Motors VA","Open to offers; private-style seller, check title (VIN 5UXTS1C04M9H29100)"],
 [2021,null,27848,48481,"Somerset, MA",471,"",4,"Black","MP","Stateline Subaru",462514861,67639,null]
 ];
 // Cars on the Oct 16 page that are no longer listed (sold or pulled).
@@ -310,7 +312,7 @@ const DRIVE_MAX = 320, NEW_DAYS = 13;
 const cars = RAW.map((r, i) => ({
   i, y: r[0], price: r[1], cg: r[2], mi: r[3], loc: r[4], dist: r[5], rating: r[6], dom: r[7],
   color: r[8], pk: r[9], seller: r[10], cgId: r[11] || null, spId: r[12] || null, was: r[13] == null ? null : r[13],
-  cm: r[14] || null, cmFee: r[15] == null ? null : r[15], M: r[9].includes("M") ? 1 : 0, CM: r[14] ? 1 : 0
+  cm: r[14] || null, cmFee: r[15] == null ? null : r[15], url: r[16] || null, srcLabel: r[17] || null, note: r[18] || null, M: r[9].includes("M") ? 1 : 0, CM: r[14] ? 1 : 0
 }));
 
 // ---- model: price = b0 + b1*(miles/10k) + b2*(year-2021) + b3*MSport + b4*CarMax ----
@@ -384,6 +386,7 @@ cars.forEach(c => {
   if (c.dom >= 120) c.flags.push("Listed " + c.dom + " days");
   if (!c.cm && c.cgId && (c.rating === "" || c.rating === "outlier")) c.flags.push(c.rating === "outlier" ? "CarGurus calls it an outlier" : "CarGurus won't rate it");
   if (c.cgWeak) c.flags.push("Weak CarGurus dealer reviews");
+  if (c.note) c.flags.push(c.note);
   if (!c.mi) c.flags.push("No mileage listed");
   if (!c.price) c.flags.push("No price listed");
 });
@@ -521,7 +524,7 @@ try {
 const sortVal = (c, k) => {
   if (k === "verdict") return c.v ? VORDER[c.v.key] : 9;
   if (k === "pk") return c.pk.length + (c.M ? 10 : 0);
-  if (k === "src") return c.cm ? "CarMax" : "CarGurus";
+  if (k === "src") return c.cm ? "CarMax" : c.srcLabel || "CarGurus";
   if (k === "get") return c.getCost == null ? 1e9 : c.getCost;
   return c[k];
 };
@@ -552,7 +555,9 @@ function render() {
     const pct = c.pct == null ? "" : '<span class="' + (c.pct >= 0 ? "pct-pos" : "pct-neg") + '">' + fmtPct(c.pct) + '%</span>';
     const pick = c.pick == null ? "" : '<span class="pick ' + (c.pick >= 0 ? "pct-pos" : "pct-neg") + '">' + fmtPct(c.pick) + '</span>';
     const pk = [...c.pk].sort((a, b) => (a === "M" ? -1 : b === "M" ? 1 : 0)).map(p => '<span class="pk' + (p === "M" ? " m" : "") + '">' + PK[p] + '</span>').join("");
-    const link = c.cm
+    const link = c.url
+      ? '<a href="' + c.url + '" target="_blank" rel="noopener">' + c.srcLabel + '</a>'
+      : c.cm
       ? '<a href="https://www.carmax.com/car/' + c.cm + '" target="_blank" rel="noopener">CarMax</a>'
       : '<a href="https://www.cargurus.com/details/' + c.cgId + '" target="_blank" rel="noopener">CarGurus</a>';
     const flags = c.flags.map(f => '<span class="flag">' + f + '</span>').join("");
@@ -567,7 +572,7 @@ function render() {
       '<td class="num">' + c.y + '</td>' +
       '<td class="r num">' + (c.mi ? c.mi.toLocaleString("en-US") : "?") + '</td>' +
       '<td>' + pk + '</td>' +
-      '<td>' + c.loc + '<span class="seller">' + c.seller + ', ' + c.color + '</span></td>' +
+      '<td>' + c.loc + '<span class="seller">' + c.seller + (c.color ? ', ' + c.color : '') + '</span></td>' +
       '<td class="num">' + dealerCell(c) + '</td>' +
       '<td class="r num">' + c.dist.toLocaleString("en-US") + '</td>' +
       '<td>' + c.get + '</td>' +
